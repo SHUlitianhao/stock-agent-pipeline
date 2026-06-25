@@ -26,7 +26,7 @@ Stock Agent Pipeline 是一个以 Skill 为核心的 AI 主观选股与模拟调
 - 模拟仓事实源以 `skills/stock-agent-pipeline/references/account-source.md` 中的事实源契约为准。
 - 模拟调仓模式表示允许交易，不表示必须交易；风格判断可以选择空仓、持有、观察或不动。
 - 本地不维护模拟仓资金、持仓、委托或成交账本。
-- 本地只保存 AI 决策记忆和调仓报告，不作为模拟仓事实源。
+- 本地只保存 AI 决策记忆和调仓报告，不作为模拟仓事实源；记忆保持精简，只保留重要判断和关键复盘。
 
 ## 报告保存规则
 
@@ -35,9 +35,10 @@ Stock Agent Pipeline 是一个以 Skill 为核心的 AI 主观选股与模拟调
 ```text
 reports/YYYY-MM-DD/HHmm-adjustment-report.md
 reports/YYYY-MM-DD/daily-summary.md
+reports/YYYY-MM-DD/daily-dashboard.html
 ```
 
-具体运行时间由外部调用或 Codex 自动化控制；项目只按实际运行时间保存报告。同一分钟重复运行时，使用 `HHmmss-adjustment-report.md`。`daily-summary.md` 只汇总当天 AI 判断、模拟交易结果和复查重点，不记录或替代模拟仓事实源账户状态。
+具体运行时间由外部调用或 Codex 自动化控制；项目只按实际运行时间保存报告。同一分钟重复运行时，使用 `HHmmss-adjustment-report.md`。如果交易型任务实际执行时间与计划时段明显偏离，项目降级为选股研究或临时复查，不执行模拟买卖。`daily-summary.md` 只汇总当天 AI 判断、模拟交易结果和复查重点，不记录或替代模拟仓事实源账户状态。`daily-dashboard.html` 是可选可视化聚合视图，用于承接详细表格、时间线、持仓明细和可视化复盘，不替代 Markdown 报告或模拟仓事实源。
 
 ## Codex 自动化时间说明
 
@@ -68,6 +69,14 @@ reports/YYYY-MM-DD/daily-summary.md
 使用 $stock-agent-pipeline 做今天的查询模式，只查资金、持仓、委托，不买卖。
 ```
 
+如果需要可视化日报，可以明确要求：
+
+```text
+使用 $stock-agent-pipeline 生成今天的可视化日报 HTML 页面。
+```
+
+Markdown 调仓报告默认保持简短，重点说明本次动作、核心理由、关键风险、触发条件和失效条件；完整表格和可视化复盘优先放入 `daily-dashboard.html`。
+
 ## 项目结构
 
 ```text
@@ -79,6 +88,7 @@ reports/
   YYYY-MM-DD/
     HHmm-adjustment-report.md
     daily-summary.md
+    daily-dashboard.html
 skills/
   stock-agent-pipeline/
     SKILL.md
@@ -90,21 +100,20 @@ skills/
       account-source.md
       memory-rules.md
       report-template.md
+      dashboard-report.md
 ```
 
 ## 关键依赖
 
 - 模拟仓事实源：以 `account-source.md` 为准；具体事实源、调用位置和认证方式只在该契约文件中维护。
-- `mx-xuangu`：A 股候选筛选。
-- `mx-data`：行情、财务和关联数据。
-- `mx-search`：新闻、公告、研报和事件检索。
-- `ifind-finance-data`：同花顺金融数据和智能选股能力。
-- 风格 Skill：以 `style-contract.md` 为准。
+- 数据 Skill：使用当前环境可用的数据能力收集行情、主题、行业、新闻、公告、事件和候选线索；具体工具不写入主流程。
+- 风格 Skill：以 `style-contract.md` 为准；具体风格只在该契约文件中维护。
 
 ## 安全边界
 
 - 模拟仓事实源以 `account-source.md` 为准。
 - `reports/memory/trading-memory.md` 是 AI 决策记忆，不是账户账本。
+- `reports/YYYY-MM-DD/daily-dashboard.html` 是可选可视化聚合视图，不是账户账本。
 - 每次买卖前必须查询模拟仓事实源当前资金、持仓、委托。
 - 每次买卖后必须再次查询模拟仓事实源当前资金、持仓、委托；交易后状态确认优先使用稳定的后端查询方式。
 - 模拟仓事实源状态不明时不交易；`委托已提交` 不等于 `已成交`，只有持仓或委托/成交状态确认后才能写成已成交。

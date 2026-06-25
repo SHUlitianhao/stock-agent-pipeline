@@ -52,5 +52,7 @@ desktop.ini
 # Local simulation reports can contain account, position, and order details.
 reports/*.md
 reports/**/*.md
+reports/*.html
+reports/**/*.html
 !reports/.gitkeep
 !reports/**/.gitkeep
